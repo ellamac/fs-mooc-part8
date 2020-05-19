@@ -15,7 +15,7 @@ const Authors = (props) => {
     return null;
   }
 
-  if (authors.loading) {
+  if (authors.loading || !authors.data) {
     return <div>loading...</div>;
   }
 
