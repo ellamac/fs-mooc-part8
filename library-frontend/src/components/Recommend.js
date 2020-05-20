@@ -1,13 +1,20 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
-const Books = ({ books, show, showBooks }) => {
+const Recommend = ({ show, books, genre, showBooks }) => {
+  useEffect(() => {
+    showBooks(genre);
+  }, [show]);
+
   if (!show) {
     return null;
   }
 
-  return (
+  return genre ? (
     <div>
-      <h2>books</h2>
+      <h2>Recommendations</h2>
+      <div>
+        books in your favorite genre <b>{genre}</b>
+      </div>
       <table>
         <tbody>
           <tr>
@@ -24,14 +31,13 @@ const Books = ({ books, show, showBooks }) => {
           ))}
         </tbody>
       </table>
-      <div>
-        <button onClick={() => showBooks('genre1')}>genre1</button>
-        <button onClick={() => showBooks('genre2')}>genre2</button>
-        <button onClick={() => showBooks('1234')}>1234</button>
-        <button onClick={() => showBooks()}>all genres</button>
-      </div>
+    </div>
+  ) : (
+    <div>
+      <h2>Recommendations</h2>
+      <div> You don't have a favortie genre </div>
     </div>
   );
 };
 
-export default Books;
+export default Recommend;
