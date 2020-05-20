@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 
-const Recommend = ({ show, books, genre }) => {
+const Recommend = ({ show, books, genre, showBooks }) => {
+  useEffect(() => {
+    showBooks(genre);
+  }, [show]);
+
   if (!show) {
     return null;
   }

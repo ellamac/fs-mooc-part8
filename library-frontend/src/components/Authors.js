@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery, useMutation } from '@apollo/client';
+import { useMutation } from '@apollo/client';
 import { ALL_AUTHORS, UPDATE_AUTHOR } from '../queries';
 import Select from 'react-select';
 
@@ -9,10 +9,6 @@ const Authors = ({ show, authors }) => {
   const [updateAuthor] = useMutation(UPDATE_AUTHOR, {
     refetchQueries: [{ query: ALL_AUTHORS }],
   });
-
-  useEffect(() => {
-    console.log('name', name);
-  }, [name]);
 
   if (!show) {
     return null;
@@ -54,7 +50,7 @@ const Authors = ({ show, authors }) => {
             <tr key={a.name}>
               <td>{a.name}</td>
               <td>{a.born}</td>
-              <td>{a.bookCount}</td>
+              <td>{a.books.length}</td>
             </tr>
           ))}
         </tbody>

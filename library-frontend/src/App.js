@@ -5,20 +5,14 @@ import Books from './components/Books';
 import NewBook from './components/NewBook';
 import Login from './components/Login';
 import Recommend from './components/Recommend';
-import {
-  ALL_BOOKS,
-  BOOK_ADDED,
-  USER,
-  ALL_AUTHORS,
-  AUTHOR_ADDED,
-} from './queries';
+import { ALL_BOOKS, BOOK_ADDED, USER, ALL_AUTHORS } from './queries';
 import Notify from './components/Notify';
 
 const App = () => {
   const [token, setToken] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
   const [page, setPage] = useState('authors');
-  const [getBooks, { loading, data }] = useLazyQuery(ALL_BOOKS);
+  const [getBooks, books] = useLazyQuery(ALL_BOOKS);
   const [getAuthors, authors] = useLazyQuery(ALL_AUTHORS);
   const client = useApolloClient();
   const [getUser, user] = useLazyQuery(USER);
@@ -51,6 +45,17 @@ const App = () => {
       set.map((p) => p.name).includes(object.name);
 
     const dataInStore = client.readQuery({ query: ALL_AUTHORS });
+
+    if (includedIn(dataInStore.allAuthors, addedAuthor)) {
+      client.writeQuery({
+        query: ALL_AUTHORS,
+        data: {
+          allAuthors: dataInStore.allAuthors.map((a) =>
+            a.name !== addedAuthor.name ? a : addedAuthor
+          ),
+        },
+      });
+    }
     if (!includedIn(dataInStore.allAuthors, addedAuthor)) {
       client.writeQuery({
         query: ALL_AUTHORS,
@@ -62,16 +67,12 @@ const App = () => {
   useSubscription(BOOK_ADDED, {
     onSubscriptionData: ({ subscriptionData }) => {
       const addedBook = subscriptionData.data.bookAdded;
+      const addedAuthor = subscriptionData.data.bookAdded.author;
       setErrorMessage(`${addedBook.title} added`);
       updateCacheWithBook(addedBook);
-    },
-  });
-
-  useSubscription(AUTHOR_ADDED, {
-    onSubscriptionData: ({ subscriptionData }) => {
-      const addedAuthor = subscriptionData.data.authorAdded;
-      setErrorMessage(`${addedAuthor.name} added`);
-      updateCacheWithAuthor(addedAuthor);
+      if (addedAuthor) {
+        updateCacheWithAuthor(addedAuthor);
+      }
     },
   });
 
@@ -106,7 +107,7 @@ const App = () => {
     );
   }
 
-  if (loading || !data || !authors.data) {
+  if (books.loading || !books.data || !authors.data) {
     return <div>loading...</div>;
   }
 
@@ -125,7 +126,7 @@ const App = () => {
 
       <Books
         show={page === 'books'}
-        books={data.allBooks}
+        books={books.data.allBooks}
         showBooks={showBooks}
       />
 
@@ -138,7 +139,8 @@ const App = () => {
       <Recommend
         show={page === 'recommend'}
         notify={notify}
-        books={data.allBooks}
+        showBooks={showBooks}
+        books={books.data.allBooks}
         genre={user.data ? user.data.me.favoriteGenre : ''}
       />
     </div>

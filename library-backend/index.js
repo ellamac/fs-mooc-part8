@@ -42,11 +42,12 @@ const typeDefs = gql`
     genres: [String!]!
     id: ID!
   }
+
   type Author {
     name: String!
     born: Int
-    bookCount: Int!
     id: ID!
+    books: [Book!]
   }
 
   type Query {
@@ -87,11 +88,11 @@ const resolvers = {
     bookCount: () => Book.collection.count(),
     allBooks: async (root, args) => {
       return args.genre
-        ? (await Book.find({})).filter((b) => b.genres.includes(args.genre))
-        : await Book.find({});
+        ? Book.find({ genres: { $in: [args.genre] } })
+        : Book.find({});
     },
     authorCount: () => Author.collection.count(),
-    allAuthors: () => Author.find({}),
+    allAuthors: async () => await Author.find({}).populate('books'),
     me: (root, args, context) => {
       const currentUser = context.currentUser;
       if (!currentUser) {
@@ -103,12 +104,6 @@ const resolvers = {
           ? currentUser.favoriteGenre
           : '',
       };
-    },
-  },
-  Author: {
-    bookCount: async (author) => {
-      const books = await Book.find({ author: author._id });
-      return books.length;
     },
   },
   Book: {
@@ -136,6 +131,7 @@ const resolvers = {
         if (!author) {
           const a = new Author({ name: args.author });
           const book = new Book({ ...args, author: a._id });
+          a.books = [book._id];
           await a.save();
           await book.save();
           pubsub.publish('BOOK_ADDED', { bookAdded: book });
@@ -144,6 +140,8 @@ const resolvers = {
         const book = new Book({ ...args, author: author._id });
         await book.save();
         pubsub.publish('BOOK_ADDED', { bookAdded: book });
+        author.books = author.books.concat(book._id);
+        await author.save();
         return book;
       } catch (error) {
         throw new UserInputError(error.message, {

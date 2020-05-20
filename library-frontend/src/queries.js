@@ -16,7 +16,9 @@ const AUTHOR_DETAILS = gql`
   fragment AuthorDetails on Author {
     name
     born
-    bookCount
+    books {
+      title
+    }
   }
 `;
 
@@ -25,7 +27,9 @@ export const ALL_AUTHORS = gql`
     allAuthors {
       name
       born
-      bookCount
+      books {
+        title
+      }
     }
   }
 `;
