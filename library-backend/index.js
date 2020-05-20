@@ -11,7 +11,7 @@ const mongoose = require('mongoose');
 mongoose.set('useFindAndModify', false);
 
 const MONGODB_URI =
-  'mongodb+srv://ellamac:salasana@cluster0-lgi3u.mongodb.net/test?retryWrites=true&w=majority';
+  'mongodb+srv://ellamac:<password>@cluster0-lgi3u.mongodb.net/test?retryWrites=true&w=majority';
 
 console.log('connecting to', MONGODB_URI);
 
