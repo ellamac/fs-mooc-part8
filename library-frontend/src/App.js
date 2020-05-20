@@ -5,7 +5,13 @@ import Books from './components/Books';
 import NewBook from './components/NewBook';
 import Login from './components/Login';
 import Recommend from './components/Recommend';
-import { ALL_BOOKS, BOOK_ADDED, USER } from './queries';
+import {
+  ALL_BOOKS,
+  BOOK_ADDED,
+  USER,
+  ALL_AUTHORS,
+  AUTHOR_ADDED,
+} from './queries';
 import Notify from './components/Notify';
 
 const App = () => {
@@ -13,16 +19,21 @@ const App = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [page, setPage] = useState('authors');
   const [getBooks, { loading, data }] = useLazyQuery(ALL_BOOKS);
+  const [getAuthors, authors] = useLazyQuery(ALL_AUTHORS);
   const client = useApolloClient();
   const [getUser, user] = useLazyQuery(USER);
 
   useEffect(() => {
-    console.log('USERRR', user);
-    user.data
-      ? console.log('userme', user.data.me.favoriteGenre)
-      : console.log('Not yet');
-  }, [user]);
-  const updateCacheWith = (addedBook) => {
+    const token = localStorage.getItem('library-user-token');
+    if (token) {
+      setToken(token);
+    }
+    getAuthors();
+    getBooks();
+    getUser();
+  }, []);
+
+  const updateCacheWithBook = (addedBook) => {
     const includedIn = (set, object) =>
       set.map((p) => p.title).includes(object.title);
 
@@ -35,22 +46,34 @@ const App = () => {
     }
   };
 
+  const updateCacheWithAuthor = (addedAuthor) => {
+    const includedIn = (set, object) =>
+      set.map((p) => p.name).includes(object.name);
+
+    const dataInStore = client.readQuery({ query: ALL_AUTHORS });
+    if (!includedIn(dataInStore.allAuthors, addedAuthor)) {
+      client.writeQuery({
+        query: ALL_AUTHORS,
+        data: { allAuthors: dataInStore.allAuthors.concat(addedAuthor) },
+      });
+    }
+  };
+
   useSubscription(BOOK_ADDED, {
     onSubscriptionData: ({ subscriptionData }) => {
       const addedBook = subscriptionData.data.bookAdded;
       setErrorMessage(`${addedBook.title} added`);
-      updateCacheWith(addedBook);
+      updateCacheWithBook(addedBook);
     },
   });
 
-  useEffect(() => {
-    const token = localStorage.getItem('library-user-token');
-    if (token) {
-      setToken(token);
-    }
-    getBooks();
-    getUser();
-  }, []);
+  useSubscription(AUTHOR_ADDED, {
+    onSubscriptionData: ({ subscriptionData }) => {
+      const addedAuthor = subscriptionData.data.authorAdded;
+      setErrorMessage(`${addedAuthor.name} added`);
+      updateCacheWithAuthor(addedAuthor);
+    },
+  });
 
   const logout = () => {
     setToken(null);
@@ -83,7 +106,7 @@ const App = () => {
     );
   }
 
-  if (loading || !data) {
+  if (loading || !data || !authors.data) {
     return <div>loading...</div>;
   }
 
@@ -98,7 +121,7 @@ const App = () => {
         <button onClick={() => logout()}>logout</button>
       </div>
 
-      <Authors show={page === 'authors'} />
+      <Authors show={page === 'authors'} authors={authors.data.allAuthors} />
 
       <Books
         show={page === 'books'}
@@ -109,7 +132,7 @@ const App = () => {
       <NewBook
         show={page === 'add'}
         setError={notify}
-        updateCacheWith={updateCacheWith}
+        updateCacheWith={updateCacheWithBook}
       />
 
       <Recommend

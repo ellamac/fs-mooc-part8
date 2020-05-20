@@ -1,28 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { ALL_AUTHORS, UPDATE_AUTHOR } from '../queries';
 import Select from 'react-select';
 
-const Authors = (props) => {
+const Authors = ({ show, authors }) => {
   const [name, setName] = useState(null);
   const [born, setBorn] = useState('');
-  const authors = useQuery(ALL_AUTHORS);
   const [updateAuthor] = useMutation(UPDATE_AUTHOR, {
     refetchQueries: [{ query: ALL_AUTHORS }],
   });
 
-  if (!props.show) {
+  useEffect(() => {
+    console.log('name', name);
+  }, [name]);
+
+  if (!show) {
     return null;
   }
 
-  if (authors.loading || !authors.data) {
+  if (!authors) {
     return <div>loading...</div>;
   }
-
-  const options = authors.data.allAuthors.map((a) => ({
-    value: a.name,
-    label: a.name,
-  }));
 
   const submit = async (event) => {
     event.preventDefault();
@@ -33,9 +31,14 @@ const Authors = (props) => {
     setBorn('');
   };
 
-  const handleChange = (name) => {
-    setName(name.value);
+  const handleChange = (n) => {
+    setName(n.value);
   };
+
+  const options = authors.map((a) => ({
+    value: a.name,
+    label: a.name,
+  }));
 
   return (
     <div>
@@ -47,7 +50,7 @@ const Authors = (props) => {
             <th>born</th>
             <th>books</th>
           </tr>
-          {authors.data.allAuthors.map((a) => (
+          {authors.map((a) => (
             <tr key={a.name}>
               <td>{a.name}</td>
               <td>{a.born}</td>

@@ -12,6 +12,14 @@ const BOOK_DETAILS = gql`
   }
 `;
 
+const AUTHOR_DETAILS = gql`
+  fragment AuthorDetails on Author {
+    name
+    born
+    bookCount
+  }
+`;
+
 export const ALL_AUTHORS = gql`
   query {
     allAuthors {
@@ -74,6 +82,15 @@ export const BOOK_ADDED = gql`
     }
   }
   ${BOOK_DETAILS}
+`;
+
+export const AUTHOR_ADDED = gql`
+  subscription {
+    authorAdded {
+      ...AuthorDetails
+    }
+  }
+  ${AUTHOR_DETAILS}
 `;
 
 export const LOGIN = gql`
